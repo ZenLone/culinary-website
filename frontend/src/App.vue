@@ -1,6 +1,7 @@
 <script>
 import Header from './components/Header.vue'
 import { ref } from 'vue';
+import axios from 'axios';
 export default{
   name:'App',
   components:{
@@ -9,9 +10,44 @@ export default{
   setup(){
 
     //data
-    
+    const ingredients = ref([]);
+    const dish_name = ref('');
+    const dish_time = ref('Не указано');
     //methods
-
+    const addIngredientInput = () => {
+      ingredients.value.push('');
+    };
+    const getFormData = async () => {
+      const hasIngredients = ingredients.value.some((ingredient) => ingredient.trim() != '');
+      if(!hasIngredients){
+        console.log('Добавленные ингредиенты, не были заполненны!');
+      }
+      else if(!dish_name.value){
+        console.log('Блюдо не названо!');
+      }
+      else{
+        const filteredIngredients = ingredients.value.filter((ingredient) => ingredient.trim() !== '');
+        // console.log('Название блюда:', dish_name.value);
+        // console.log("Время приготовления:", dish_time.value);
+        // console.log('Ингредиенты:', filteredIngredients);
+        const data = {
+          name:dish_name.value,
+          ingredients:filteredIngredients,
+          time:dish_time.value
+        }
+        console.log(data);
+        try{
+          const response = await axios.post('http://127.0.0.1:8000/api/data', data);
+          console.log('Данные успешно отправлены:', response.data);
+        }
+        catch(error){
+          console.error('Ошибка при отправке данных:', error.message);
+        }
+      }
+    };
+    const removeIngredient = (index) => {
+      ingredients.value.pop(); // Удаляем элемент из массива по индексу
+    };
     //computed
 
     //watch
@@ -19,8 +55,13 @@ export default{
     //Хуки
 
     return {
-      dish_name: ref('')
-    }
+  dish_name,
+  ingredients,
+  addIngredientInput,
+  getFormData,
+  removeIngredient,
+  dish_time
+  };
   }
 }
 </script>
@@ -37,17 +78,20 @@ export default{
 
     <div class="time-container">
       <h2>Время приготовления:</h2>
-      <input type="text" placeholder="Введите...">
+      <input type="text" @input="dish_time = $event.target.value" placeholder="Введите...">
     </div>
 
-    <h2 class="h2-additions">Ингридиенты:</h2>
+    <h2 class="h2-additions">Ингредиенты:</h2>
+    <div  class="additions-input-container">
+      <input v-for="(ingredient, index) in ingredients" :key="index" class="addition_input" v-model="ingredients[index] "  type="text" placeholder="Введите..."></input>
+    </div>
     <div class="additions-btns-container">
-      <input class="addition_input" type="text" placeholder="Введите..."></input>
-      <button class="addition_button" type="button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg></button>
-    </div>
-
+    <button class="addition_button" type="button" @click="removeIngredient(index)">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M432 256c0 17.7-14.3 32-32 32L48 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l352 0c17.7 0 32 14.3 32 32z"/></svg></button>
+    <button class="addition_button" @click="addIngredientInput" type="button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg></button>
+  </div>
     <div class="btn-container">
-      <button class="add-btn">Добавить блюдо</button>
+      <button class="add-btn" @click="getFormData">Добавить блюдо</button>
     </div>
 
   </div>
@@ -126,7 +170,7 @@ export default{
   font-size: 14px;
   border:1px solid orange;
   border-radius: 9px;
-  width:100px;
+  width:115px;
   
   height:25px;
   padding:0 5px;
@@ -165,10 +209,18 @@ export default{
     }
   }
 }
-.additions-btns-container{
+.additions-input-container{
   padding:0 5px;
   gap:15px;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: left;
+}
+
+.additions-btns-container{
+  display: flex;
+  column-gap: 10px;
+  margin-top: 10px;
 }
 .add-btn{
   padding:5px 10px;

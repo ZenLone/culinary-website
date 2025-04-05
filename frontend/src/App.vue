@@ -43,7 +43,7 @@ export default{
     <h2 class="h2-additions">Ингридиенты:</h2>
     <div class="additions-btns-container">
       <input class="addition_input" type="text" placeholder="Введите..."></input>
-      <button class="addition_button" type="button">Добавить</button>
+      <button class="addition_button" type="button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg></button>
     </div>
 
     <div class="btn-container">
@@ -61,6 +61,8 @@ export default{
   padding:25px 25px 5px;
   border:1px solid orange;
   border-radius: 21px;
+  background-color: white;
+  box-shadow: 4px 4px 19px 19px rgba(34, 60, 80, 0.2);
 }
 .nav{
   display: flex;
@@ -129,17 +131,39 @@ export default{
   height:25px;
   padding:0 5px;
   cursor: pointer;
+  transition: all .3s ease-out;
+  &:hover{
+    background-color: orange;
+    color:black;
+  }
 }
 
 .addition_button{
   font-size: 14px;
   border:1px solid orange;
   border-radius: 9px;
-  width:100px;
+  width:65px;
   background-color: transparent;
   height:25px;
   padding:0 5px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .3s ease-out;
+  & svg{
+    width:17px;
+    height:17px;
+  }
+  & path{
+    fill:orange;
+  }
+  &:hover{
+    background-color: orange;
+    & path{
+      fill:black;
+    }
+  }
 }
 .additions-btns-container{
   padding:0 5px;

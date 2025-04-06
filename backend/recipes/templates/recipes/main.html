@@ -1,0 +1,25 @@
+<!-- recipes/main.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recipes</title>
+</head>
+<body>
+    <h1>Список рецептов</h1>
+    {% if recipes %}
+        <ul>
+            {% for recipe in recipes %}
+                <li>
+                    <p><strong>ID:</strong> {{ recipe.id }}</p>
+                    <p><strong>Key1:</strong> {{ recipe.key1 }}</p>
+                    <p><strong>Key2:</strong> {{ recipe.key2 }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Нет доступных рецептов.</p>
+    {% endif %}
+</body>
+</html>

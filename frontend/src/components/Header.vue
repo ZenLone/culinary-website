@@ -21,7 +21,10 @@ export default{
 </script>
 
 <template>
-  Миша привет
+  <div class="nav">
+    <a href="#/">Dishes</a> 
+    <a href="#/add_dish">New dish</a>
+  </div>
 </template>
 
 <style scoped>

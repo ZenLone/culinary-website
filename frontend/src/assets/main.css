@@ -5,7 +5,8 @@
   border:none;
 }
 body{
-  height:100vh;
+  /* height:100vh; */
+  padding:25px;
   align-items: center;
   display: flex;
   justify-content: center;

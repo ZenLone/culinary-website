@@ -36,7 +36,7 @@ export default{
         }
         console.log(data);
         try{
-          const response = await axios.post('http://127.0.0.1:8000/api/data', data);
+          const response = await axios.post('http://localhost:3000/dishes', data);
           console.log('Данные успешно отправлены:', response.data);
         }
         catch(error){

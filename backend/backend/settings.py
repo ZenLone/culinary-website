@@ -91,13 +91,13 @@ AUTH_PASSWORD_VALIDATORS = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173", # Ваш фронтенд
-    "http://127.0.0.1:5173", # Можно добавить и IP-адрес на всякий случай
+    "http://127.0.0.1:8000", # Можно добавить и IP-адрес на всякий случай
 ]
 
 # Trusted sources for CSRF (important for POST from other origins)
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
-    "http://127.0.0.1:5173",
+    "http://127.0.0.1:8000",
 ]
 
 

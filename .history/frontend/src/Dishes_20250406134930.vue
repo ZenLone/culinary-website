@@ -25,7 +25,6 @@ export default{
         try{
             await axios.delete(`http://localhost:3000/dishes/${id}`);
             console.log("Успешно удалено блюдо с id: ", id);
-            fetchDishes();
         }
         catch(error){
             console.log('Ошибка при удалении блюда');
@@ -44,7 +43,7 @@ export default{
       fetchDishes();
     });
 
-    return{dishes, deleteDish};
+    return{dishes};
   }
 }
 </script>
@@ -86,7 +85,7 @@ export default{
     font-family: 'Helvetica';
     border: 1px solid orange;
     border-radius: 9px;
-    width: auto;
+    width: 115px;
     height: 25px;
     padding: 2px 5px;
     cursor: pointer;

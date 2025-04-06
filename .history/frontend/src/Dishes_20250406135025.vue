@@ -86,7 +86,7 @@ export default{
     font-family: 'Helvetica';
     border: 1px solid orange;
     border-radius: 9px;
-    width: auto;
+    width: 115px;
     height: 25px;
     padding: 2px 5px;
     cursor: pointer;

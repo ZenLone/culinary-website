@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path
-from .views import get_recipes
+from .views import recipes_api
 
 urlpatterns = [
-    path('', get_recipes, name='test'),
+    path('', recipes_api, name='test'),
 ]

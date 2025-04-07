@@ -8,7 +8,8 @@ recipes = None
 
 print("Attempting to connect to MongoDB at localhost:27017...")
 try:
-    client = MongoClient(host="localhost", port=27017, serverSelectionTimeoutMS=5000)
+    # client = MongoClient(host="localhost", port=27017, serverSelectionTimeoutMS=5000)
+    client = MongoClient('mongodb+srv://ZenLone:R22E05D2007k@zenlone.ckgp0oh.mongodb.net/?retryWrites=true&w=majority&appName=ZenLone')
     client.admin.command('ismaster')
     print("MongoDB connection successful.")
 

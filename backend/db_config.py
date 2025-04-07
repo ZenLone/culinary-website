@@ -1,6 +1,30 @@
 from pymongo import MongoClient
-client = MongoClient(host="localhost", port=27017)
+from pymongo.errors import ConnectionFailure
 
-culinary_db = client["culinary-website"]
+# Initialize variables as None to indicate uninitialized state
+client = None
+culinary_db = None
+recipes = None
 
-recipes = culinary_db["recipes"]
+print("Attempting to connect to MongoDB at localhost:27017...")
+try:
+    client = MongoClient(host="localhost", port=27017, serverSelectionTimeoutMS=5000)
+    client.admin.command('ismaster')
+    print("MongoDB connection successful.")
+
+    culinary_db = client["culinary-website"]
+    print(f"Selected database: {culinary_db.name}")
+
+    recipes = culinary_db["recipes"]
+    print(f"Selected collection: {recipes.name}")
+
+    if recipes is None:
+        # This case should ideally not happen if the above lines succeed
+        print("ERROR: 'recipes' collection object is None even after assignment.")
+
+except ConnectionFailure as e:
+    print(f"ERROR: Could not connect to MongoDB: {e}")
+    # Keep recipes as None to indicate failure
+except Exception as e:
+    print(f"ERROR: An unexpected error occurred during MongoDB setup: {e}")
+    # Keep recipes as None to indicate failure

@@ -1,6 +1,5 @@
 from pathlib import Path
 import os
-from db_config import mongo_client
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
@@ -17,14 +16,16 @@ SECRET_KEY = 'django-insecure-w(_k5t8s7sb%l2op#bt+_u@gq++le$6#5ro((72k4su7(c1sj#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# Updated for local development
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'recipes',
     'corsheaders',
+    'recipes',
+    'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -35,7 +36,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -90,7 +90,14 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Адрес вашего фронтенда
+    "http://localhost:5173", # Ваш фронтенд
+    "http://127.0.0.1:8000", # Можно добавить и IP-адрес на всякий случай
+]
+
+# Trusted sources for CSRF (important for POST from other origins)
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:8000",
 ]
 
 

@@ -1,0 +1,26 @@
+*,*:after,*:before{
+  box-sizing: border-box;
+  margin:0;
+  padding:0;
+  border:none;
+}
+body{
+  height:100vh;
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  background-color: #d8d6d6;
+}
+ul,li{
+  list-style: none;
+}
+a{
+  text-decoration: none;
+}
+h2{
+  font-family: 'Helvetica';
+}
+button,input{
+  outline: none;
+  border:none;
+}

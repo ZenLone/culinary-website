@@ -37,7 +37,7 @@ def _handle_get_recipes(request):
         recipes_list = []
         for recipe in recipes_cursor:
             if '_id' in recipe:
-                recipe['_id'] = str(recipe['_id'])  # Convert ObjectId to string
+                recipe['_id'] = str(recipe['_id']) 
             recipes_list.append(recipe)
         
         logger.info(f"Successfully fetched {len(recipes_list)} recipes.")

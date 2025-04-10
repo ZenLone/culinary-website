@@ -4,11 +4,13 @@ import AddDish from './Add_Dish.vue';
 import Dishes from './Dishes.vue';
 import Header from './components/Header.vue';
 import Profile from './Profile.vue';
+import Register from './Register.vue';
 // Определение маршрутов
 const routes = {
   '/': Dishes,
   '/add_dish': AddDish,
-  '/profile': Profile
+  '/profile': Profile,
+  '/register':Register
 };
 
 export default{

@@ -1,8 +1,7 @@
 <script>
-import{ref} from 'vue';
-import axios from 'axios';
+import {ref} from 'vue';
 export default{
-    name:'falseAuth',
+    name:'Register',
     components:{
 
     },
@@ -15,26 +14,24 @@ export default{
         };
         const errorMessage = ref('');
         //methods
-        const loginUser = async()=>{
+        const registerUser = async()=>{
             errorMessage.value = '';
             if(!user.username || !user.mail || !user.password){
                 errorMessage.value = 'All fields are required';
-                console.log(errorMessage.value);
             }
             else{
                 try{
-                    console.log('Success!');
-                    const response = await axios.post('http://localhost:8000/api/login/', user);
+                    const response = await axios.post('http://localhost:8000/api/register/', user);
+                    console.log('New user registered!');
                     // Check server response
                 if (response.data.success) {
-                    console.log('Token:', response.data.token); 
-                    Cookies.set('token', response.data.token, { expires: 7 }); // Токен будет храниться 7 дней
+                    console.log('Token:', response.data.token); // Save token for future use
                 } else {
                     errorMessage.value = response.data.message || 'Login failed. Please try again.';
                 }
                 }
                 catch(error){
-                    errorMessage.value = 'Login failed. Please try again.';
+                    errorMessage.value = 'Register failed. Please try again.';
                     console.log(error.message);
                 }
             }
@@ -44,14 +41,14 @@ export default{
         return {
             user,
             errorMessage,
-            loginUser
+            registerUser
         };
     }
 }
 </script>
 <template>
-<form @submit.prevent="loginUser">
-    <h2 class="form-title">Login</h2>
+<form @submit.prevent="registerUser">
+    <h2 class="form-title">Register</h2>
     <div class="form-input">
         <h2>Username</h2>
         <input v-model="user.username" placeholder="Введите никнейм..." type="text">
@@ -65,7 +62,7 @@ export default{
         <input v-model="user.password" placeholder="Введите пароль..." type="password">
     </div>
     <div class="auth-functions-container">
-        <a href="#/register">Register</a>
+        <a href="#/profile">Login</a>
     </div>
     <div class="error-container" v-if="errorMessage">
         <h2>{{errorMessage}}</h2>
@@ -73,8 +70,7 @@ export default{
     <div class="form-btn-container">
         <button class="form-btn" type="submit">Войти</button>
     </div>
-
-</form>
+    </form>
 </template>
 <style scoped>
 h2{

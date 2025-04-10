@@ -3,10 +3,12 @@ import { ref, computed } from 'vue';
 import AddDish from './Add_Dish.vue';
 import Dishes from './Dishes.vue';
 import Header from './components/Header.vue';
+import Profile from './Profile.vue';
 // Определение маршрутов
 const routes = {
   '/': Dishes,
-  '/add_dish': AddDish
+  '/add_dish': AddDish,
+  '/profile': Profile
 };
 
 export default{

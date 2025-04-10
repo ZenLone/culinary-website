@@ -17,7 +17,7 @@ export default{
         //methods
         const validateToken = async () => {
         try {
-        const response = await axios.post('http://localhost:8000/api/validate-token/');
+        const response = await axios.post('http://localhost:8000/api/validate-token/',{token});
         isAuthenticated.value = response.data.valid;
          } catch (error) {
         isAuthenticated.value = false;

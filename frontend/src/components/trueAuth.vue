@@ -4,12 +4,24 @@ export default{
     components:{
 
     },
+    props:{
+        isAuthenticated:{
+            type:Boolean,
+            required:true
+        }
+    },
     setup(){
         //data
         
         //methods
-
+        const logout = () =>{
+            Cookies.remove('token');
+            isAuthenticated = false;
+        }
         //Хуки
+        return{
+            logout
+        };
     }
 }
 </script>
@@ -36,7 +48,7 @@ export default{
 
 </div>
 <div class="btn-container-profile">
-    <button class="LogoutBtn">Выйти</button>
+    <button class="LogoutBtn" @click="logout">Выйти</button>
 </div>
 </template>
 <style scoped>

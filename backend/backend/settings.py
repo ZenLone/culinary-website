@@ -25,6 +25,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 INSTALLED_APPS = [
     'corsheaders',
     'recipes',
+    'authentication',
     'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -107,6 +108,8 @@ CSRF_TRUSTED_ORIGINS = [
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
+
+APPEND_SLASH = False
 
 USE_I18N = True
 

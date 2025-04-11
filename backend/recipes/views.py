@@ -9,25 +9,34 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+class CustomJsonResponse(JsonResponse):
+    def __init__(self, data, ensure_ascii=False, **kwargs):
+        super().__init__(data, **kwargs)
+        self.content = json.dumps(data, ensure_ascii=ensure_ascii).encode('utf-8')
+
 @csrf_exempt
-@require_http_methods(["GET", "POST", "DELETE"])
+@require_http_methods(["GET", "POST"])
 def recipes_api(request):
     if recipes is None:
         logger.error("Ошибка подключение к Бд")
-        return JsonResponse({"error": "Database service unavailable"}, status=503, ensure_ascii=False)
+        return JsonResponse({"Ошбика подключения к БД"}, status=503, ensure_ascii=False)
     if request.method == 'GET':
         return _handle_get_recipes(request)
     elif request.method == 'POST':
         return _handle_post_recipe(request)
-    elif request.method == "DELETE":
-        return _handle_delete_recipe(request)
 
-
-class CustomJsonResponse(JsonResponse):
-    def __init__(self, data, ensure_ascii=False, **kwargs):
-        # Сериализация данных с ensure_ascii
-        super().__init__(data, **kwargs)
-        self.content = json.dumps(data, ensure_ascii=ensure_ascii).encode('utf-8')
+@csrf_exempt
+@require_http_methods(["GET", "PUT", "DELETE"])
+def recipe_id(request, id):
+    if recipes is None:
+        logger.error("Ошибка подключение к Бд")
+        return JsonResponse({"Ошбика подключения к БД"}, status=503, ensure_ascii=False)
+    if request.method == 'GET':
+        return _handle_get_recipe_detail(request, id)
+    elif request.method == 'PUT':
+        return _handle_put_recipe(request, id)
+    elif request.method == 'DELETE':
+        return _handle_delete_recipe(request, id)
 
 def _handle_get_recipes(request):
     try:
@@ -35,36 +44,66 @@ def _handle_get_recipes(request):
         recipes_list = []
         for recipe in recipes_cursor:
             if '_id' in recipe:
-                recipe['_id'] = str(recipe['_id']) 
+                recipe['_id'] = str(recipe['_id'])
             recipes_list.append(recipe)
-        # Используем CustomJsonResponse
-        return CustomJsonResponse(recipes_list, ensure_ascii=False, safe=False, status=200)
-    
+        return CustomJsonResponse(recipes_list, safe=False, ensure_ascii=False, status=200)
     except Exception as e:
-        logger.error(f"Error fetching recipes from MongoDB: {e}", exc_info=True)
-        return CustomJsonResponse({"error": "Failed to fetch recipes"}, ensure_ascii=False, status=500)
+        logger.error(f"Неизвестная ошибка: {e}", exc_info=True)
+        return JsonResponse({"Неизвестная ошибка"}, status=500)
 
 def _handle_post_recipe(request):
-    data = json.loads(request.body)
-        # Insert into MongoDB
-    insert_result = recipes.insert_one(data)
-    inserted_id = str(insert_result.inserted_id)
-    logger.info(f"Successfully added new recipe with ID: {inserted_id}")
-
-        # Return success response
-    return JsonResponse({
+    try:
+        data = json.loads(request.body)
+        insert_result = recipes.insert_one(data)
+        inserted_id = str(insert_result.inserted_id)
+        logger.info(f"Рецепт успешно добавлен по id: {inserted_id}")
+        return JsonResponse({
             "message": "Recipe added successfully",
-            "inserted_id": inserted_id
+            "id": inserted_id
         }, status=201)
+    except json.JSONDecodeError:
+        logger.error("неверный json формат")
+        return JsonResponse({"неверный json формат"}, status=400)
+    except Exception as e:
+        logger.error(f"Ошибка добавления: {e}", exc_info=True)
+        return JsonResponse({"Ошибка добавления"}, status=500)
 
-def _handle_delete_recipe(request):
-    data = json.loads(request.body)
-    recipes_id = data.get("id")
-    Object_Id = ObjectId(recipes_id)
-    delete_recipes = recipes.delete_one({"id": Object_Id})
-    if delete_recipes.deleted_count == 1:
-        logger.info(recipes_id, " Id успешно удалено")
-        return JsonResponse({"message": "Recipe deleted successfully"}, status=200, ensure_ascii=False)
-    else:
-        logger.warning( recipes_id, "Это id не удалось удалить")
-        return JsonResponse({"error": "Recipe not found"}, status=404, ensure_ascii=False)
+def _handle_get_recipe_detail(request, id):
+    try:
+        recipe = recipes.find_one({"_id": ObjectId(id)})
+        if recipe:
+            recipe['_id'] = str(recipe['_id'])
+            return CustomJsonResponse(recipe, safe=False, ensure_ascii=False, status=200)
+        else:
+            return JsonResponse({"Рецепт не найден"}, status=404)
+    except Exception as e:
+        logger.error(f"Неизвестная ошибка: {e}", exc_info=True)
+        return JsonResponse({"Неизвестная ошибка"}, status=500)
+
+def _handle_put_recipe(request, id):
+    try:
+        data = json.loads(request.body)
+        updated_result = recipes.update_one({"_id": ObjectId(id)}, {"$set": data})
+        if updated_result.modified_count == 1:
+            logger.info(f"Рецепт добавлен по id: {id}")
+            return JsonResponse({"Рецепт добавлен"}, status=200)
+        else:
+            return JsonResponse({"рецепт не найден"}, status=404)
+    except json.JSONDecodeError:
+        logger.error("неверный json формат")
+        return JsonResponse({"неверный json формат"}, status=400)
+    except Exception as e:
+        logger.error(f"ошбка добавления {e}", exc_info=True)
+        return JsonResponse({"ошибка добавления"}, status=500)
+
+def _handle_delete_recipe(request, id):
+    try:
+        delete_result = recipes.delete_one({"_id": ObjectId(id)})
+        if delete_result.deleted_count == 1:
+            logger.info(f"рецепт успешно удален по id: {id}")
+            return JsonResponse("рецепт успешно удален", status=200)
+        else:
+            return JsonResponse("рецепт не найден", status=404)
+    except Exception as e:
+        logger.error("ошибка удаления рецепта", exc_info=True)
+        return JsonResponse("ошибка удаления рецепта", status=500)

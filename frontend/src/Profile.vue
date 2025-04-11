@@ -29,6 +29,8 @@ export default{
 
         //Хуки
         validateToken(); // Вызываем при загрузке компонента
+
+        return{isAuthenticated};
     }
 }
 </script>

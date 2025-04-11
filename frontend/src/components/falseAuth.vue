@@ -1,6 +1,7 @@
 <script>
 import{ref} from 'vue';
 import axios from 'axios';
+import Cookies from 'js-cookie';
 export default{
     name:'falseAuth',
     components:{
@@ -25,6 +26,8 @@ export default{
                 try{
                     console.log('Success!');
                     const response = await axios.post('http://localhost:8000/api/login/', user);
+                    const csrfToken = Cookies.get('csrftoken');
+                    axios.defaults.headers.common['X-CSRFToken'] = csrfToken;
                     // Check server response
                 if (response.data.success) {
                     console.log('Token:', response.data.token); 

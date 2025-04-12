@@ -24,16 +24,17 @@ export default{
             }
             else{
                 try{
-                    console.log('Success!');
-                    const response = await axios.post('http://localhost:8000/api/login/', user);
-                    const csrfToken = Cookies.get('csrftoken');
-                    axios.defaults.headers.common['X-CSRFToken'] = csrfToken;
-                    // Check server response
-                if (response.data.success) {
+                    const response = await axios.post('http://127.0.0.1:8000/api/login/', user);
+                    // const csrfToken = Cookies.get('csrftoken');
+                    // axios.defaults.headers.common['X-CSRFToken'] = csrfToken;
+                if (response.data.token) {
                     console.log('Token:', response.data.token); 
                     Cookies.set('token', response.data.token, { expires: 7 }); // Токен будет храниться 7 дней
+                    console.log('Success!');
+                    window.location.reload();
                 } else {
                     errorMessage.value = response.data.message || 'Login failed. Please try again.';
+                    console.log(response.data)
                 }
                 }
                 catch(error){

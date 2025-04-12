@@ -1,4 +1,5 @@
 <script>
+import Cookies from 'js-cookie';
 export default{
     name:'trueAuth',
     components:{
@@ -8,15 +9,19 @@ export default{
         isAuthenticated:{
             type:Boolean,
             required:true
+        },
+        userData:{
+            type:Object,
+            required:true
         }
     },
-    setup(){
+    setup(props,{emit}){
         //data
         
         //methods
         const logout = () =>{
             Cookies.remove('token');
-            isAuthenticated = false;
+            emit('update-auth',false);
         }
         //Хуки
         return{
@@ -38,8 +43,8 @@ export default{
 </button>
 </div>
 <div class="profile-info">
-<h2 class="profile-h2">Username: {{  }}</h2>
-<h2 class="profile-h2">Your mail: {{  }}</h2>
+<h2 class="profile-h2">Username: {{ userData?.username || 'Loading...' }}</h2>
+<h2 class="profile-h2">Your mail: {{ userData?.mail || 'Loading...' }}</h2>
 <h2 class="profile-h2">Дата регистрации: {{  }}</h2>
 <h2 class="amount-dishes">Количество созданных блюд: {{ }}</h2>
 </div>

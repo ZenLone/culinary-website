@@ -1,5 +1,6 @@
 <script>
 import {ref} from 'vue';
+import axios from 'axios';
 export default{
     name:'Register',
     components:{
@@ -21,13 +22,14 @@ export default{
             }
             else{
                 try{
-                    const response = await axios.post('http://localhost:8000/api/register/', user);
-                    console.log('New user registered!');
+                    const response = await axios.post('http://127.0.0.1:8000/api/register/', user);
                     // Check server response
-                if (response.data.success) {
+                    if (response.data.token) {
                     console.log('Token:', response.data.token); // Save token for future use
+                    console.log('New user registered!');
                 } else {
-                    errorMessage.value = response.data.message || 'Login failed. Please try again.';
+                    errorMessage.value = response.data.message || 'Error: maybe a user with this username is exists';
+                    console.log('Register is failed');
                 }
                 }
                 catch(error){

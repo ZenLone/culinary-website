@@ -5,58 +5,75 @@ from django.http import HttpResponse, JsonResponse
 import logging
 import jwt
 from datetime import datetime, timedelta
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.hashers import check_password
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 logger = logging.getLogger(__name__)
 
+@csrf_exempt
 def login_api(request):
+    """
+    API для входа пользователя.
+    Обрабатывает POST запросы с username, email и password.
+    """
     if profiles is None:
         logger.error("Ошибка подключения к БД")
         return JsonResponse({"error": "Ошибка подключения к БД"}, status=503, ensure_ascii=False)
-    if request.method == 'GET':
-        return user_login_POST(request)
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            username = data.get('username')
+            email = data.get('mail')
+            password = data.get('password')
+            print(username, email, password)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Неверный формат запроса"}, status=400)
+        if not username or not email or not password:
+            return JsonResponse(
+                {"error": "Необходимо передать username, email и password"},
+                status=400
+            )
+        user = autificate_user(username, password, email)
+        if user:
+            # Генерация JWT
+            expiration_time = datetime.utcnow() + timedelta(hours=1)
+            payload = {
+                'user_id': str(user['_id']),
+                'exp': expiration_time
+            }
+            jwt_token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+
+            return JsonResponse(
+                {"message": "Вход успешно выполнен", "token": jwt_token},
+                status=200
+            )
+        else:
+            return JsonResponse({"error": "Неверный username или password или email"}, status=401)
     else:
         return JsonResponse({"error": "Метод не разрешен"}, status=405)
 
-def user_login_POST(request):
-    # Получаем данные из запроса
-    username = request.POST.get('username')
-    email = request.POST.get('email')
-    password = request.POST.get('password')
-
-    # Проверяем, что все обязательные поля переданы
-    if not username or not email or not password:
-        return JsonResponse(
-            {"error": "Необходимо передать username, email и password"},
-            status=400
-        )
-    user = autificate_user(username, password, email)
-    if user:
-        # Генерация JWT
-        expiration_time = datetime.utcnow() + timedelta(hours=1)
-        payload = {
-            'user_id': str(user['_id']),
-            'exp': expiration_time
-        }
-        jwt_token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
-
-        return JsonResponse(
-            {"message": "Вход успешно выполнен", "token": jwt_token},
-            status=200
-        )
-    else:
-        return JsonResponse({"error": "Неверный username или password или email"}, status=401)
-
+@csrf_exempt
 def autificate_user(username, password, email):
     user = profiles.find_one({"username": username})
-    if user and email != user['email']:
-        return None
-    if user and check_password(password, user['password']):
-        return user
-    else:
+    if not user:
         return None
 
+    # Проверка email
+    if email != user.get('mail'):
+        return None
+
+    # Проверка password
+    if not check_password(password, user.get('password')):
+        return None
+
+    return user
+
+@csrf_exempt
 def token_required(view_func):
+    """
+    Декоратор для проверки JWT токена в заголовке Authorization.
+    """
     def wrapper(request, *args, **kwargs):
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
@@ -69,26 +86,22 @@ def token_required(view_func):
         except jwt.ExpiredSignatureError:
             return JsonResponse({"error": "Токен истек"}, status=401)
         except jwt.InvalidTokenError:
-           return JsonResponse({"error": "Неверный токен"}, status=401)
+            return JsonResponse({"error": "Неверный токен"}, status=401)
 
         return view_func(request, *args, **kwargs)
 
     return wrapper
 
-# @token_required
-# def protected_view(request):
-#     user_id = request.user_id  # ID пользователя из декодированного токена
-#     return JsonResponse(
-#         {"message": f"Доступ разрешен для пользователя с ID {user_id}"},
-#         status=200,
-#         ensure_ascii=False
-#     )
-
+@csrf_exempt
 def validate_token(token):
+    """
+    Функция для проверки валидности JWT токена.
+    Возвращает True, если токен валиден, и False в противном случае.
+    """
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-        return True, payload
+        return JsonResponse({"valid": True, "payload": payload})
     except jwt.ExpiredSignatureError:
-        return False, None
+        return JsonResponse({"valid": False, "error": "Токен истек"}, status=401)
     except jwt.InvalidTokenError:
-        return False, None
+        return JsonResponse({"valid": False, "error": "Неверный токен"}, status=401)

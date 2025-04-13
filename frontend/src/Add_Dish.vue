@@ -1,6 +1,7 @@
 <script>
 import { ref } from 'vue';
 import axios from 'axios';
+import Cookies from 'js-cookie';
 export default{
   name:'App',
   components:{
@@ -36,7 +37,10 @@ export default{
         }
         console.log(data);
         try{
-          const response = await axios.post('http://127.0.0.1:8000/api/data', data);
+          const token = Cookies.get('token');
+          const response = await axios.post('http://127.0.0.1:8000/api/data', data,{
+                headers:{Authorization:`Bearer ${token}`}
+            });
           console.log('Данные успешно отправлены:', response.data);
         }
         catch(error){

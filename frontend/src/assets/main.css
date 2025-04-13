@@ -43,6 +43,10 @@ button,input{
     &:hover{
       background-color: rgba(255, 166, 1, 0.732);
       cursor: pointer;
+      color:black;
+    }
+    &:active{
+      color:black;
     }
   }
 }

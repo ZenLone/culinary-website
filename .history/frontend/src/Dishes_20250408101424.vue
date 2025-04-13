@@ -1,7 +1,6 @@
 <script>
 import {ref, onMounted} from 'vue';
 import axios from 'axios';
-import Cookies from 'js-cookie';
 export default{
   name:'Dishes',
   components:{
@@ -14,10 +13,7 @@ export default{
     //methods
     const fetchDishes = async()=>{
         try{
-            const token = Cookies.get('token');
-            const response = await axios.get('http://127.0.0.1:8000/api/data',{
-                headers:{Authorization:`Bearer ${token}`}
-            });
+            const response = await axios.get('http://127.0.0.1:8000/api/data');
             dishes.value = response.data; // Предполагается, что сервер возвращает массив блюд
         }
         catch(error){

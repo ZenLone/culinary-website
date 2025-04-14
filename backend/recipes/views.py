@@ -18,7 +18,7 @@ class CustomJsonResponse(JsonResponse):
 
 def _decode_jwt(token):
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms="HS256")
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         return payload
     except jwt.ExpiredSignatureError: # Токен истек
         return None
@@ -26,7 +26,15 @@ def _decode_jwt(token):
         return None
 
 def _get_user_id_from_token(request):
-    token = request.headers.get('Authorization', '').split(' ')[1] 
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        return None
+
+    parts = auth_header.split(' ')
+    if len(parts) != 2:
+        return None
+
+    token = parts[1]
     if not token:
         return None
     payload = _decode_jwt(token)
@@ -39,11 +47,11 @@ def _get_user_id_from_token(request):
 def recipes_api(request):
     if recipes is None:
         logger.error("Ошибка подключение к Бд")
-        return JsonResponse({"Ошбика подключения к БД"}, status=503, ensure_ascii=False)
+        return CustomJsonResponse({"message": "Ошбика подключения к БД"}, status=503)
     
     user_id = _get_user_id_from_token(request)
     if not user_id:
-        return JsonResponse({"Ошибка авторизации"}, status=401, ensure_ascii=False)
+        return CustomJsonResponse({"message": "Ошибка авторизации"}, status=401)
 
     if request.method == 'GET':
         return _handle_get_recipes(request, user_id)
@@ -51,20 +59,18 @@ def recipes_api(request):
         return _handle_post_recipe(request, user_id)
 
 @csrf_exempt
-@require_http_methods(["GET", "PUT", "DELETE"])
+@require_http_methods(["GET", "DELETE"])
 def recipe_id(request, id):
     if recipes is None:
         logger.error("Ошибка подключение к Бд")
-        return JsonResponse({"Ошбика подключения к БД"}, status=503, ensure_ascii=False)
+        return CustomJsonResponse({"message": "Ошбика подключения к БД"}, status=503)
     
     user_id = _get_user_id_from_token(request)
     if not user_id:
-        return JsonResponse({"Ошибка авторизации"}, status=401, ensure_ascii=False)
+        return CustomJsonResponse({"message": "Ошибка авторизации"}, status=401)
 
     if request.method == 'GET':
         return _handle_get_recipe_detail(request, id, user_id)
-    elif request.method == 'PUT':
-        return _handle_put_recipe(request, id, user_id)
     elif request.method == 'DELETE':
         return _handle_delete_recipe(request, id, user_id)
 
@@ -76,10 +82,10 @@ def _handle_get_recipes(request, user_id):
             if '_id' in recipe:
                 recipe['_id'] = str(recipe['_id'])
             recipes_list.append(recipe)
-        return CustomJsonResponse(recipes_list, safe=False, ensure_ascii=False, status=200)
+        return CustomJsonResponse(recipes_list, safe=False, status=200)
     except Exception as e:
         logger.error(f"Неизвестная ошибка: {e}", exc_info=True)
-        return JsonResponse({"Неизвестная ошибка"}, status=500)
+        return CustomJsonResponse({"message": "Неизвестная ошибка"}, status=500)
 
 def _handle_post_recipe(request, user_id):
     try:
@@ -88,56 +94,37 @@ def _handle_post_recipe(request, user_id):
         insert_result = recipes.insert_one(data)
         inserted_id = str(insert_result.inserted_id)
         logger.info(f"Рецепт успешно добавлен по id: {inserted_id}")
-        return JsonResponse({
+        return CustomJsonResponse({
             "message": "Recipe added successfully",
             "id": inserted_id
         }, status=201)
     except json.JSONDecodeError:
         logger.error("неверный json формат")
-        return JsonResponse({"неверный json формат"}, status=400)
+        return CustomJsonResponse({"message": "неверный json формат"}, status=400)
     except Exception as e:
         logger.error(f"Ошибка добавления: {e}", exc_info=True)
-        return JsonResponse({"Ошибка добавления"}, status=500)
+        return CustomJsonResponse({"message": "Ошибка добавления"}, status=500)
 
 def _handle_get_recipe_detail(request, id, user_id):
     try:
         recipe = recipes.find_one({"_id": ObjectId(id), "user_id": user_id})
         if recipe:
             recipe['_id'] = str(recipe['_id'])
-            return CustomJsonResponse(recipe, safe=False, ensure_ascii=False, status=200)
+            return CustomJsonResponse(recipe, safe=False, status=200)
         else:
-            return JsonResponse({"Рецепт не найден"}, status=404)
+            return CustomJsonResponse({"message": "Рецепт не найден"}, status=404)
     except Exception as e:
         logger.error(f"Неизвестная ошибка: {e}", exc_info=True)
-        return JsonResponse({"Неизвестная ошибка"}, status=500)
-
-def _handle_put_recipe(request, id, user_id):
-    try:
-        data = json.loads(request.body)
-        updated_result = recipes.update_one(
-            {"_id": ObjectId(id), "user_id": user_id},
-            {"$set": data}
-        )
-        if updated_result.modified_count == 1:
-            logger.info(f"Рецепт обновлен по id: {id}")
-            return JsonResponse({"Рецепт обновлен"}, status=200)
-        else:
-            return JsonResponse({"рецепт не найден"}, status=404)
-    except json.JSONDecodeError:
-        logger.error("неверный json формат")
-        return JsonResponse({"неверный json формат"}, status=400)
-    except Exception as e:
-        logger.error(f"ошбка обновления {e}", exc_info=True)
-        return JsonResponse({"ошибка обновления"}, status=500)
+        return CustomJsonResponse({"message": "Неизвестная ошибка"}, status=500)
 
 def _handle_delete_recipe(request, id, user_id):
     try:
         delete_result = recipes.delete_one({"_id": ObjectId(id), "user_id": user_id})
         if delete_result.deleted_count == 1:
             logger.info(f"рецепт успешно удален по id: {id}")
-            return JsonResponse("рецепт успешно удален", status=200)
+            return CustomJsonResponse({"message": "рецепт успешно удален"}, status=200)
         else:
-            return JsonResponse("рецепт не найден", status=404)
+            return CustomJsonResponse({"message": "рецепт не найден"}, status=404)
     except Exception as e:
         logger.error("ошибка удаления рецепта", exc_info=True)
-        return JsonResponse("ошибка удаления рецепта", status=500)
+        return CustomJsonResponse({"message": "ошибка удаления рецепта"}, status=500)

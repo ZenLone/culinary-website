@@ -27,7 +27,7 @@ export default{
 
     const deleteDish = async(id) =>{
         try{
-            await axios.delete(`http://127.0.0.1:8000/api/data/${id}/`);
+            await axios.delete(`http://127.0.0.1:8000/api/data/${id}`);
             console.log("Успешно удалено блюдо с id: ", id);
             fetchDishes();
         }

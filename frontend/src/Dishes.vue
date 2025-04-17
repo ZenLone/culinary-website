@@ -18,7 +18,7 @@ export default{
             const response = await axios.get('http://127.0.0.1:8000/api/data',{
                 headers:{Authorization:`Bearer ${token}`}
             });
-            dishes.value = response.data; // Предполагается, что сервер возвращает массив блюд
+            dishes.value = response.data; //для node.js response.data.dishes
         }
         catch(error){
             console.error('Ошибка при получении данных:', error.message);

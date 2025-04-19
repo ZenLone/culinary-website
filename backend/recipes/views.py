@@ -119,12 +119,20 @@ def _handle_get_recipe_detail(request, id, user_id):
 
 def _handle_delete_recipe(request, id, user_id):
     try:
+        # Проверяем, является ли id допустимым ObjectId
+        if not ObjectId.is_valid(id):
+            return CustomJsonResponse({"message": "Недопустимый ID рецепта"}, status=400)
+
+        recipe = recipes.find_one({"_id": ObjectId(id), "user_id": user_id})
+        if not recipe:
+            return CustomJsonResponse({"message": "рецепт не найден"}, status=404)
+
         delete_result = recipes.delete_one({"_id": ObjectId(id), "user_id": user_id})
         if delete_result.deleted_count == 1:
             logger.info(f"рецепт успешно удален по id: {id}")
             return CustomJsonResponse({"message": "рецепт успешно удален"}, status=200)
         else:
-            return CustomJsonResponse({"message": "рецепт не найден"}, status=404)
+            return CustomJsonResponse({"message": "ошибка при удалении рецепта"}, status=500)
     except Exception as e:
         logger.error("ошибка удаления рецепта", exc_info=True)
         return CustomJsonResponse({"message": "ошибка удаления рецепта"}, status=500)

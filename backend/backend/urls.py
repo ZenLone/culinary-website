@@ -6,7 +6,7 @@ from authentication.views import login_api ,validate_token, registration, user_d
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/data', recipes_api, name='recipes_api'),
-    path('api/data/<str:id>/', recipe_id, name='recipe_detail'),
+    path('api/data/<str:id>', recipe_id, name='recipe_detail'),
     path('api/login/', login_api, name='login_api'),
     path('api/validate-token/', validate_token),
     path('api/user-data/',user_data, name='user-data'),

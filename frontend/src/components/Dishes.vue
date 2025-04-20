@@ -1,5 +1,5 @@
 <script>
-import {ref, onMounted} from 'vue';
+import {ref, onMounted,onUnmounted} from 'vue';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 export default{
@@ -49,8 +49,16 @@ export default{
     // Получаем данные при монтировании компонента
     onMounted(() => {
       fetchDishes();
+      document.body.style.backgroundImage = "url('/src/assets/images/maket3-dishes.png')";
+      document.body.style.backgroundSize = '100%';
+      document.body.style.backgroundRepeat = 'repeat';
     });
-
+    onUnmounted(() => {
+      // Возвращаем фон по умолчанию
+      document.body.style.backgroundImage = '';
+      document.body.style.backgroundSize = '';
+      document.body.style.backgroundPosition = '';
+    });
     return{dishes, deleteDish};
   }
 }

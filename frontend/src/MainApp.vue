@@ -1,30 +1,34 @@
 <!-- MainApp.vue -->
 <script>
-import { ref, computed, onMounted } from 'vue';
+import { ref, provide, onMounted } from 'vue';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import AddDish from './Add_Dish.vue';
-import Dishes from './Dishes.vue';
+import AddDish from './components/Add_Dish.vue';
+import Dishes from './components/Dishes.vue';
 import Header from './components/Header.vue';
-import Profile from './Profile.vue';
-import Register from './Register.vue';
-import NotFound from './NotFound.vue';
-import AdminPage from './Admin.vue';
+import Profile from './components/Profile.vue';
+import Register from './components/Register.vue';
+import NotFound from './components/NotFound.vue';
+import AdminPage from './components/Admin.vue';
+import { errorMessages } from 'vue/compiler-sfc';
 
-// Определение маршрутов
-const routes = {
-  '/': Dishes,
-  '/add_dish': AddDish,
-  '/profile': Profile,
-  '/register': Register,
-  '/admin': AdminPage,
-  '/not_found': NotFound,
-};
+// // Определение маршрутов
+// const routes = {
+//   '/': Dishes,
+//   '/add_dish': AddDish,
+//   '/profile': Profile,
+//   '/register': Register,
+//   '/admin': AdminPage,
+//   '/not_found': NotFound,
+// };
 
 
 export default {
   components: {
-    Header,
+    Header, Dishes,
+    AddDish, Profile,
+    Register, NotFound,
+    AdminPage
   },
 
   setup() {
@@ -40,18 +44,23 @@ export default {
       try {
         if (!token) {
           console.log('Login or register!!!');
+          return;
         } else {
-          const response = await axios.post('http://127.0.0.1:8000/api/validate-token/', { token });
+          const response = await axios.post('http://localhost:8000/api/validate-token/', { token });
           isAuthenticated.value = response.data.valid;
-
           if (isAuthenticated.value) {
-            const userResponse = await axios.get('http://127.0.0.1:8000/api/user-data/', {
+            const userResponse = await axios.get('http://localhost:8000/api/user-data/', {
               headers: { Authorization: `Bearer ${token}` },
             });
             userData.value = userResponse.data;
           }
+          else{
+            Cookies.remove('token');
+            isAuthenticated.value = false;
+          }
         }
       } catch (error) {
+        Cookies.remove('token');
         isAuthenticated.value = false;
         console.error('Token validation failed:', error.message);
         console.log('Login or register!!!');
@@ -63,19 +72,18 @@ export default {
       validateToken();
     });
 
-    window.addEventListener('hashchange', () => {
-      // Обновление пути при изменении хэша
-      currentPath.value = window.location.hash;
-    });
+    // // Следим за изменением хэша URL
+    // window.addEventListener('hashchange', () => {
+    //   currentPath.value = window.location.hash.slice(1); // Обновляем текущий путь
+    // });
 
-    // Вычисляем текущий компонент на основе текущего пути
-    const currentView = computed(() => {
-      if (currentPath.value === '#/admin' && (userData.value.role !== 'admin' || userData.value.role == undefined)) {
-        return routes['/not_found'];
-      } else {
-        return routes[currentPath.value.slice(1)] || routes['/not_found'];
-      }
-    });
+    // // Вычисляем, разрешён ли текущий маршрут
+    // const isRouteAllowed = computed(() => {
+    //   if (currentPath.value === '/admin') {
+    //     return isAuthenticated.value && userData.value.role === 'admin'; // Разрешаем только администраторам
+    //   }
+    //   return true; // Все остальные маршруты разрешены
+    // });
 
      // Генерация случайного цвета
      const randomColor = () => {
@@ -87,12 +95,13 @@ export default {
       return color;
     };
 
+    provide('userData', userData);//Передача userData всем компонентам
+
     return {
       isAuthenticated,
       userData,
-      currentView,
       randomColor,
-      borderColor
+      borderColor,
     };
   },
 };
@@ -103,7 +112,7 @@ export default {
     @mouseenter="borderColor = randomColor()"
     @mouseleave="borderColor = '#000000'">
     <Header></Header>
-    <component :is="currentView" />
+    <router-view></router-view>
   </div>
 </template>
 

@@ -69,7 +69,7 @@ export default{
         <input v-model="user.password" placeholder="Введите пароль..." type="password">
     </div>
     <div class="auth-functions-container">
-        <a href="#/register">Register</a>
+        <a href="/register">Register</a>
     </div>
     <div class="error-container" v-if="errorMessage">
         <h2>{{errorMessage}}</h2>

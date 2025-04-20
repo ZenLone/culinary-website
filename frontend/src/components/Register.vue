@@ -13,6 +13,7 @@ export default{
             mail:'',
             password:''
         };
+        const isRegister = ref(false);
         const errorMessage = ref('');
         //methods
         const registerUser = async()=>{
@@ -27,6 +28,13 @@ export default{
                     if (response.data.token) {
                     console.log('Token:', response.data.token); // Save token for future use
                     console.log('New user registered!');
+                    isRegister.value = true;
+                    setTimeout(() => {
+                    document.querySelector('.registerSuccessModal').classList.add('visible');
+                    setTimeout(()=>{
+                        document.querySelector('.registerSuccessModal').classList.remove('visible');
+                    },3000)
+                    }, 100);
                 } else {
                     errorMessage.value = response.data.message || 'Error: maybe a user with this username is exists';
                     console.log('Register is failed');
@@ -43,7 +51,8 @@ export default{
         return {
             user,
             errorMessage,
-            registerUser
+            registerUser,
+            isRegister
         };
     }
 }
@@ -64,7 +73,7 @@ export default{
         <input v-model="user.password" placeholder="Введите пароль..." type="password">
     </div>
     <div class="auth-functions-container">
-        <a href="#/profile">Login</a>
+        <a href="/profile">Login</a>
     </div>
     <div class="error-container" v-if="errorMessage">
         <h2>{{errorMessage}}</h2>
@@ -73,6 +82,7 @@ export default{
         <button class="form-btn" type="submit">Войти</button>
     </div>
     </form>
+    <img class="registerSuccessModal" src="../assets/images/success-register.png" alt="">
 </template>
 <style scoped>
 h2{
@@ -119,5 +129,18 @@ h2{
         color:red;
         font-size: 16px;
     }
+}
+.registerSuccessModal{
+    position: fixed;
+    bottom:0px;
+    right:20px;
+    visibility: hidden;
+    transition: all .4s;
+    opacity: 0;
+}
+.visible{
+    visibility: visible;
+    transform: translateY(-20px);
+    opacity: 1;
 }
 </style>

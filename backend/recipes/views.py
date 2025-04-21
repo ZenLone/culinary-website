@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from db_config import recipes
+from db_config import recipes, fs
 from backend import settings
 import json
 from bson import ObjectId
@@ -136,3 +136,6 @@ def _handle_delete_recipe(request, id, user_id):
     except Exception as e:
         logger.error("ошибка удаления рецепта", exc_info=True)
         return CustomJsonResponse({"message": "ошибка удаления рецепта"}, status=500)
+    
+def upload_photo(request):
+    file = fs.get(ObjectId(photo_id))

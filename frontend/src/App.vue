@@ -1,58 +1,39 @@
+<!-- App.vue -->
 <script>
-import { ref, computed } from 'vue';
-import AddDish from './Add_Dish.vue';
-import Dishes from './Dishes.vue';
-import Header from './components/Header.vue';
-import Profile from './Profile.vue';
-import Register from './Register.vue';
-// Определение маршрутов
-const routes = {
-  '/': Dishes,
-  '/add_dish': AddDish,
-  '/profile': Profile,
-  '/register':Register
-};
+import { ref, onMounted } from 'vue';
+import Cookies from 'js-cookie';
+import Welcome from './Welcome.vue';
+import MainApp from './MainApp.vue';
 
-export default{
-  components:{
-  Header
+export default {
+  components: {
+    Welcome,
+    MainApp,
   },
 
-  setup(){
-// Текущий путь (считывается из хэша URL)
-const currentPath = ref(window.location.hash);
-
-// Обновление пути при изменении хэша
-window.addEventListener('hashchange', () => {
-  currentPath.value = window.location.hash;
-});
-
-// Вычисляем текущий компонент на основе текущего пути
-  const currentView = computed(() => {
-  return routes[currentPath.value.slice(1)]
-  });
-  return{currentView};
-  }
+  setup() {
+    //data
+    const showWelcome = ref(true);
+    const token = Cookies.get('token');
+    //methods
+    if (token) {
+      showWelcome.value = false; // Если пользователь авторизован, сразу показываем основное приложение
+    }
+    // Метод для закрытия Welcome
+    const closeWelcome = () => {
+      showWelcome.value = false;
+    };
+    return {
+      showWelcome,
+      closeWelcome
+    };
+  },
 };
-
-
 </script>
 
 <template>
-  <div class="app-container">
-    <Header></Header>
-    <component :is="currentView" />
+  <div>
+    <Welcome v-if="showWelcome" @close-welcome ="closeWelcome" />
+    <MainApp v-else />
   </div>
 </template>
-
-<style scoped>
-.app-container {
-  width: 450px;
-  padding: 25px;
-  border: 1px solid orange;
-  border-radius: 21px;
-  background-color: white;
-  box-shadow: 4px 4px 19px 19px rgba(34, 60, 80, 0.2);
-}
-
-</style>

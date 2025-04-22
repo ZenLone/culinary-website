@@ -1,11 +1,16 @@
+from io import BytesIO
+from tkinter import Image
 from django.shortcuts import render
 from backend import settings
-from db_config import profiles
+from db_config import profiles , fs
 from django.http import HttpResponse, JsonResponse
+from django.urls import reverse
 import logging
 import jwt
+from PIL import Image as PILImage
 from datetime import datetime, timedelta
 from django.contrib.auth.hashers import check_password, make_password
+from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 import json
 from bson import ObjectId
@@ -122,7 +127,7 @@ def registration(request):
             data = json.loads(request.body)
             username = data.get('username')
             password = data.get('password')
-            email = data.get('mail')
+            email = data.get('mail')    
         except json.JSONDecodeError:
             return JsonResponse({"error": "Неверный формат запроса"}, status=400)
 
@@ -141,12 +146,16 @@ def registration(request):
 
         # Хеширование пароля
         hashed_password = make_password(password)
+        registrationDate = datetime.utcnow()
 
         # Создание нового пользователя
         new_user = {
-            "username": username,
-            "password": hashed_password,
-            "mail": email
+        "username": username,
+        "password": hashed_password,
+        "mail": email,
+        "registrationDate": datetime.utcnow(),
+        "role": "user",
+        "image_id": None
         }
 
         # Вставка пользователя в БД
@@ -171,16 +180,148 @@ def registration(request):
 @token_required
 def user_data(request):
     try:
+        # Извлечение user_id из токена
         user_id = request.user_id
-        user = profiles.find_one({"_id": ObjectId(user_id)})
-        if user:
-            user_data = {
-                "username": user.get("username"),
-                "mail": user.get("mail")
-            }
+
+        # Преобразование user_id в ObjectId
+        try:
+            user_id = ObjectId(user_id)
+        except Exception:
+            return JsonResponse({"error": "Неверный формат user_id"}, status=400)
+
+        # Поиск пользователя по ID
+        user = profiles.find_one({"_id": user_id})
+        if not user:
+            return JsonResponse({"error": "Пользователь не найден"}, status=404)
+
+        # Формирование данных пользователя
+        user_data = {
+            "username": user.get("username"),
+            "mail": user.get("mail"),
+            "registrationDate": user.get("registrationDate"),
+            "_id": str(user.get("_id")),
+            "role": "user",
+            "image_id": str(user.get("image_id")) if user.get("image_id") else None
+        }
+
+        # Обработка GET-запросов
+        if request.method == 'GET':
             return JsonResponse(user_data, status=200)
         else:
-            return JsonResponse({"error": "Пользователь не найден"}, status=404)
+            return JsonResponse({"error": "Метод не разрешен"}, status=405)
+
     except Exception as e:
         logger.exception("Ошибка при получении данных пользователя")
         return JsonResponse({"error": "Ошибка сервера"}, status=500)
+@csrf_exempt
+def upload_photo(request, id):
+    if request.method == "POST":
+        try:
+            # Проверка наличия файла в запросе
+            if "image" not in request.FILES:
+                logger.error("Файл не найден в запросе")
+                return JsonResponse({"error": "Файл не найден в запросе"}, status=400)
+
+            file = request.FILES["image"]
+            logger.info(f"Получен файл: {file.name}, размер: {file.size} байт")
+
+            # Открытие изображения с помощью Pillow
+            try:
+                img = PILImage.open(file)  # Явное использование PILImage
+            except Exception as e:
+                logger.error(f"Ошибка при открытии изображения: {str(e)}")
+                return JsonResponse({"error": f"Ошибка при открытии изображения: {str(e)}"}, status=500)
+
+            max_size = (500, 500)  # Максимальный размер изображения
+            img.thumbnail(max_size)
+
+            # Сохранение измененного изображения во временный буфер
+            buffer = BytesIO()
+            try:
+                img.save(buffer, format=img.format)
+            except Exception as e:
+                logger.error(f"Ошибка при сохранении изображения: {str(e)}")
+                return JsonResponse({"error": f"Ошибка при сохранении изображения: {str(e)}"}, status=500)
+
+            buffer.seek(0)
+
+            # Загрузка файла в GridFS
+            try:
+                file_id = fs.put(
+                    buffer,
+                    user_id=id,
+                    filename=file.name,
+                    content_type=file.content_type
+                )
+            except Exception as e:
+                logger.error(f"Ошибка при загрузке файла в GridFS: {str(e)}")
+                return JsonResponse({"error": f"Ошибка при загрузке файла в GridFS: {str(e)}"}, status=500)
+
+            # Обновление поля image_id в профиле пользователя
+            try:
+                profiles.update_one(
+                    {"_id": ObjectId(id)},
+                    {"$set": {"image_id": str(file_id)}}
+                )
+            except Exception as e:
+                logger.error(f"Ошибка при обновлении профиля пользователя: {str(e)}")
+                return JsonResponse({"error": f"Ошибка при обновлении профиля пользователя: {str(e)}"}, status=500)
+
+            return JsonResponse({
+                "message": "Файл успешно загружен",
+                "file_id": str(file_id),
+            }, status=200)
+
+        except Exception as e:
+            logger.error(f"Неожиданная ошибка: {str(e)}")
+            return JsonResponse({"error": f"Неожиданная ошибка: {str(e)}"}, status=500)
+        
+@csrf_exempt
+def load_photo(request, id):
+    try:
+        # Преобразование строки в ObjectId
+        user_oid = ObjectId(id)
+
+        # Поиск пользователя по _id
+        user = profiles.find_one({"_id": user_oid})
+        if not user:
+            return JsonResponse({"error": "Пользователь не найден"}, status=404)
+
+        # Получение image_id из документа пользователя
+        image_id = user.get("image_id")
+        if not image_id:
+            return JsonResponse({"error": "У пользователя нет аватара"}, status=404)
+
+        # Получение файла из GridFS
+        image = fs.get(ObjectId(image_id))
+
+        # Отправка файла клиенту
+        response = HttpResponse(image.read(), content_type=image.content_type)
+        response['Content-Disposition'] = f'inline; filename="{image.filename}"'
+        return response
+
+    except Exception as e:
+        return JsonResponse({"error": f"Ошибка сервера: {str(e)}"}, status=500)
+@csrf_exempt
+def get_image(request, image_id):
+    try:
+        # Преобразование строки в ObjectId
+        image_oid = ObjectId(image_id)
+
+        # Проверка наличия файла в GridFS
+        if not fs.exists({"_id": image_oid}):
+            logger.error(f"Файл с _id {image_oid} не найден в GridFS")
+            return HttpResponse("Image not found", status=404)
+
+        # Получение файла из GridFS
+        image = fs.get(image_oid)
+
+        # Отправка файла клиенту
+        response = HttpResponse(image.read(), content_type=image.content_type)
+        response['Content-Disposition'] = f'inline; filename="{image.filename}"'
+        return response
+
+    except Exception as e:
+        logger.error(f"Ошибка сервера: {str(e)}")
+        return HttpResponse("Internal Server Error", status=500)
+

@@ -2,7 +2,6 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from gridfs import GridFS
 
-# Initialize variables as None to indicate uninitialized state
 client = None
 culinary_db = None
 recipes = None
@@ -14,7 +13,7 @@ try:
     recipes = culinary_db["recipes"]
     profiles = culinary_db["profiles"]
     photo = culinary_db["photo"]
-    fs = GridFS(photo)
+    fs = GridFS(culinary_db)
     if recipes is None:
         print("коллекция recepies не найдена")
     if profiles is None:

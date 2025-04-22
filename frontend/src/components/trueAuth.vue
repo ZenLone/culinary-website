@@ -71,8 +71,10 @@ export default{
                 return;
             }
             else{
-            const imagePath = response.data.imagePath;
-            const fullImagePath = `http://127.0.0.1:8000/${imagePath}`;
+            console.log(response)
+            const imagePath = response.data.imageurl;
+            console.log(imagePath)
+            const fullImagePath = `http://127.0.0.1:8000/api/user-image/${userId}`;
             console.log('Путь к изображению:', fullImagePath);
             avatarPath.value = fullImagePath;
         }

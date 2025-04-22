@@ -136,6 +136,3 @@ def _handle_delete_recipe(request, id, user_id):
     except Exception as e:
         logger.error("ошибка удаления рецепта", exc_info=True)
         return CustomJsonResponse({"message": "ошибка удаления рецепта"}, status=500)
-    
-def upload_photo(request):
-    file = fs.get(ObjectId(photo_id))

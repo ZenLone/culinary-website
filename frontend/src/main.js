@@ -1,6 +1,12 @@
+// main.js
+import { createApp } from 'vue';
+import App from './App.vue';
+import router from './routes'; // Импортируем маршрутизатор
 import './assets/main.css'
+const app = createApp(App);
 
-import { createApp } from 'vue'
-import App from './App.vue'
+// Подключаем маршрутизатор
+app.use(router);
 
-createApp(App).mount('#app')
+// Монтируем приложение
+app.mount('#app');

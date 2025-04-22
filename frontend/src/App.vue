@@ -2,7 +2,7 @@
 <script>
 import { ref, onMounted } from 'vue';
 import Cookies from 'js-cookie';
-import Welcome from './Welcome.vue';
+import Welcome from './components/Welcome.vue';
 import MainApp from './MainApp.vue';
 
 export default {
@@ -37,3 +37,12 @@ export default {
     <MainApp v-else />
   </div>
 </template>
+<style scoped>
+/* Стили для родительского контейнера, добавленного Vue Router */
+[data-v-app] > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+</style>

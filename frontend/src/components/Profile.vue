@@ -1,7 +1,7 @@
 <script>
 import Cookies from 'js-cookie';
-import trueAuth from './components/trueAuth.vue';
-import falseAuth from './components/falseAuth.vue';
+import trueAuth from './trueAuth.vue';
+import falseAuth from './falseAuth.vue';
 import axios from 'axios';
 import {ref} from 'vue';
 export default{

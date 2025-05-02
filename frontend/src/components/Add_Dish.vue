@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 export default{
-  name:'App',
+  name:'Add_Dish',
   components:{
 
   },
@@ -13,19 +13,30 @@ export default{
     const ingredients = ref([]);
     const dish_name = ref('');
     const dish_time = ref('Не указано');
+    const errorMessage = ref('');
+    const apiUrl = import.meta.env.VITE_API_URL;
     //methods
     const addIngredientInput = () => {
       ingredients.value.push('');
     };
     const getFormData = async () => {
+      const token = Cookies.get("token");
+      if(!token){
+        console.log('You need to be logged in');
+        errorMessage.value = 'Войдите в свой профиль!'
+        return;
+      }
       const hasIngredients = ingredients.value.some((ingredient) => ingredient.trim() != '');
       if(!hasIngredients){
         console.log('Добавленные ингредиенты, не были заполненны!');
+        errorMessage.value = 'Заполните все ингредиенты!';
       }
       else if(!dish_name.value){
         console.log('Блюдо не названо!');
+        errorMessage.value = 'Назовите своё блюдо!';
       }
       else{
+        errorMessage.value = 'Блюдо было успешно создано!';
         const filteredIngredients = ingredients.value.filter((ingredient) => ingredient.trim() !== '');
         // console.log('Название блюда:', dish_name.value);
         // console.log("Время приготовления:", dish_time.value);
@@ -38,9 +49,9 @@ export default{
         console.log(data);
         try{
           const token = Cookies.get('token');
-          const response = await axios.post('http://127.0.0.1:8000/api/data', data,{
-                headers:{Authorization:`Bearer ${token}`}
-            });
+          const response = await axios.post(`${apiUrl}/api/data/`, data,
+            {headers:{Authorization:`Bearer ${token}`}},
+          );
           console.log('Данные успешно отправлены:', response.data);
         }
         catch(error){
@@ -63,7 +74,8 @@ export default{
   addIngredientInput,
   getFormData,
   removeIngredient,
-  dish_time
+  dish_time,
+  errorMessage
   };
   }
 }
@@ -76,7 +88,7 @@ export default{
     <h2>Добавить блюдо</h2>
   </div> -->
   <div class="container">
-    <h2>Добавление блюда: {{ dish_name }}</h2>
+    <h2 class="addDishTitle">Добавление блюда: {{ dish_name }}</h2>
     <input class="dish_name_input" placeholder="Название блюда" @input="dish_name = $event.target.value" type="text">
 
     <div class="time-container">
@@ -96,7 +108,9 @@ export default{
     <div class="btn-container">
       <button class="add-btn" @click="getFormData">Добавить блюдо</button>
     </div>
-
+    <div class="error-container" v-if="errorMessage">
+        <h2>{{errorMessage}}</h2>
+    </div>
   </div>
 
 
@@ -249,5 +263,23 @@ export default{
   margin-top: 10px;
   height:32px;
   position: relative;
+}
+.addDishTitle{
+  padding: 5px 10px 5px 10px;
+  border-bottom: 1px solid black;
+  margin-bottom: 10px;
+  border-radius: 1px;
+  font-size: 24px;
+  font-family: Helvetica;
+}
+.container .addDishTitle{
+  font-size: 24px;
+  font-family: Helvetica;
+}
+.error-container{
+  & h2{
+    font-size: 16px;;
+    font-family: 'Helvetica';
+  }
 }
 </style>

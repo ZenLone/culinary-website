@@ -11,14 +11,24 @@ export default{
 
     //data
     const dishes = ref([]);
+    const isAuth = ref(false);
+    const apiUrl = import.meta.env.VITE_API_URL;
     //methods
     const fetchDishes = async()=>{
         try{
             const token = Cookies.get('token');
-            const response = await axios.get('http://127.0.0.1:8000/api/data',{
+            if(!token){
+                console.log('You need to be logged in');
+                return;
+            }
+            else{
+            const response = await axios.get(`${apiUrl}/api/data/`, {
                 headers:{Authorization:`Bearer ${token}`}
-            });
-            dishes.value = response.data; //для node.js response.data.dishes
+            },);
+            dishes.value = response.data.dishes; // Предполагается, что сервер возвращает массив блюд
+            console.log('Success dishes collection');
+            isAuth.value = true;
+        }
         }
         catch(error){
             console.error('Ошибка при получении данных:', error.message);
@@ -27,12 +37,10 @@ export default{
 
     const deleteDish = async(id) =>{
         try{
-        const token = Cookies.get('token');
-            await axios.delete(`http://127.0.0.1:8000/api/data/${id}`,{
-                headers:{Authorization:`Bearer ${token}`}
-            });
-            console.log("Успешно удалено блюдо с id: ", id);
+            await axios.delete(`${apiUrl}/api/data/${id}/`);
+            // console.log("Успешно удалено блюдо с id: ", id);
             fetchDishes();
+            isAuth.value = true;
         }
         catch(error){
             console.log('Ошибка при удалении блюда');
@@ -51,6 +59,7 @@ export default{
       fetchDishes();
       document.body.style.backgroundImage = "url('/src/assets/images/maket3-dishes.png')";
       document.body.style.backgroundSize = '100%';
+    //   document.body.style.backgroundPosition = 'center';
       document.body.style.backgroundRepeat = 'repeat';
     });
     onUnmounted(() => {
@@ -59,7 +68,8 @@ export default{
       document.body.style.backgroundSize = '';
       document.body.style.backgroundPosition = '';
     });
-    return{dishes, deleteDish};
+
+    return{dishes, deleteDish,isAuth};
   }
 }
 </script>
@@ -67,6 +77,7 @@ export default{
 <template>
     <div class="dishes-container">
     <h2 class="dish-title">Список блюд:</h2>
+    <h2 v-if="!isAuth" class="errorMessage">Авторизуйтесь, чтобы увидеть или создать свои блюда!</h2>
     <ul class="dish-items-list">
         <li v-for="(dish,index) in dishes ":key="index" class="dish-item">
             <h2 class="dish-h2">{{ dish.name }} - {{ dish.time }}</h2>
@@ -83,10 +94,16 @@ export default{
 </template>
 
 <style scoped>
+body{
+    background-image: url(../assets/images/3-frame.png);
+}
 .dish-title{
-    font-size: 21px;
-    
-    margin:5px 0;
+    font-size: 24px;
+    padding: 5px 10px 5px 10px;
+    margin-bottom: 10px;
+    border-bottom:1px solid black;
+    border-radius: 1px;
+
 }
 .dish-h2{
     border:1px solid orange;
@@ -142,5 +159,9 @@ export default{
     display: flex;
     flex-wrap: wrap;
     justify-content: left;
+}
+.errorMessage{
+    font-size: 18px;
+    font-family: 'Helvetica';
 }
 </style>

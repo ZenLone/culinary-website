@@ -1,10 +1,10 @@
 <script>
 import {ref} from 'vue';
 import axios from 'axios';
+import { Howl } from 'howler';
 export default{
     name:'Register',
     components:{
-
     },
     setup(){
         //data
@@ -15,6 +15,7 @@ export default{
         };
         const isRegister = ref(false);
         const errorMessage = ref('');
+        const apiUrl = import.meta.env.VITE_API_URL;
         //methods
         const registerUser = async()=>{
             errorMessage.value = '';
@@ -23,12 +24,16 @@ export default{
             }
             else{
                 try{
-                    const response = await axios.post('http://127.0.0.1:8000/api/register/', user);
+                    const response = await axios.post(`${apiUrl}/api/register/`, user);
                     // Check server response
-                    if (response.data.token) {
+                if (response.data.token) {
                     console.log('Token:', response.data.token); // Save token for future use
                     console.log('New user registered!');
                     isRegister.value = true;
+                    const successSound = new Howl({
+                    src: ['../assets/audio/Record (online-voice-recorder.com) (6).mp3'] // Убедитесь, что путь правильный
+                    });
+                    successSound.play();
                     setTimeout(() => {
                     document.querySelector('.registerSuccessModal').classList.add('visible');
                     setTimeout(()=>{
@@ -79,10 +84,11 @@ export default{
         <h2>{{errorMessage}}</h2>
     </div>
     <div class="form-btn-container">
-        <button class="form-btn" type="submit">Войти</button>
+        <button class="form-btn" type="submit">Зарегистрироваться</button>
     </div>
     </form>
     <img class="registerSuccessModal" src="../assets/images/success-register.png" alt="">
+    <audio id="successSound" src="../assets/audio/Record (online-voice-recorder.com) (6).mp3"></audio>
 </template>
 <style scoped>
 h2{

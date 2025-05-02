@@ -23,6 +23,7 @@ export default{
     setup(props,{emit}){
         //data
         const avatarPath = ref('');
+        const apiUrl = import.meta.env.VITE_API_URL;
         //methods
         const logout = () =>{
             Cookies.remove('token');
@@ -44,7 +45,7 @@ export default{
                 const formData = new FormData();
                 formData.append('image', file);
                 console.log('Object with file',[...formData.entries()]);
-            const response = await axios.post(`http://127.0.0.1:8000/api/upload-image/${userId}`,formData,
+            const response = await axios.post(`${apiUrl}/api/upload-image/${userId}/`,formData,
                 {headers:{'Content-Type': 'multipart/form-data',}}
 
             );
@@ -64,15 +65,14 @@ export default{
         const fetchUserAvatar = async()=>{
             try{
             const userId = props.userData._id;
-            console.log(userId);
-            
-            const response = await axios.get(`http://127.0.0.1:8000/api/user-image/${userId}`);
-            if(!response.data){
-                return;
+            const response = await axios.get(`${apiUrl}/api/user-image/${userId}/`);
+            if(!response.data || !response){
+                avatarPath.value = `${apiUrl}/uploads/default_avatar.jpg`;
+                return avatarPath.value;
             }
             else{
             const imagePath = response.data.imagePath;
-            const fullImagePath = `http://127.0.0.1:8000/${imagePath}`;
+            const fullImagePath = `${apiUrl}/${imagePath}`;
             console.log('Путь к изображению:', fullImagePath);
             avatarPath.value = fullImagePath;
         }
@@ -172,6 +172,7 @@ h2{
     height:105px;
     box-shadow: 1px 1px 11px 2px rgba(34, 60, 80, 0.31);
     position: relative;
+    border-radius: 6px;
     &:hover{
         opacity: 0.4;
         .upload-photo{
@@ -191,6 +192,7 @@ h2{
 .avatar{
     width:105px;
     height:105px;
+    border-radius: 6px;
 }
 .upload-photo{
     display: none;

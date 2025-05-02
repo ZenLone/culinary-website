@@ -10,17 +10,7 @@ import Profile from './components/Profile.vue';
 import Register from './components/Register.vue';
 import NotFound from './components/NotFound.vue';
 import AdminPage from './components/Admin.vue';
-import { errorMessages } from 'vue/compiler-sfc';
-
-// // Определение маршрутов
-// const routes = {
-//   '/': Dishes,
-//   '/add_dish': AddDish,
-//   '/profile': Profile,
-//   '/register': Register,
-//   '/admin': AdminPage,
-//   '/not_found': NotFound,
-// };
+const apiUrl = import.meta.env.VITE_API_URL;
 
 
 export default {
@@ -46,10 +36,10 @@ export default {
           console.log('Login or register!!!');
           return;
         } else {
-          const response = await axios.post('http://localhost:8000/api/validate-token/', { token });
+          const response = await axios.post(`${apiUrl}/api/validate-token/`, { token });
           isAuthenticated.value = response.data.valid;
           if (isAuthenticated.value) {
-            const userResponse = await axios.get('http://localhost:8000/api/user-data/', {
+            const userResponse = await axios.get(`${apiUrl}/api/user-data/`, {
               headers: { Authorization: `Bearer ${token}` },
             });
             userData.value = userResponse.data;
@@ -72,18 +62,6 @@ export default {
       validateToken();
     });
 
-    // // Следим за изменением хэша URL
-    // window.addEventListener('hashchange', () => {
-    //   currentPath.value = window.location.hash.slice(1); // Обновляем текущий путь
-    // });
-
-    // // Вычисляем, разрешён ли текущий маршрут
-    // const isRouteAllowed = computed(() => {
-    //   if (currentPath.value === '/admin') {
-    //     return isAuthenticated.value && userData.value.role === 'admin'; // Разрешаем только администраторам
-    //   }
-    //   return true; // Все остальные маршруты разрешены
-    // });
 
      // Генерация случайного цвета
      const randomColor = () => {

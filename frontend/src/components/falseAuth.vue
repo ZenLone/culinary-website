@@ -15,6 +15,7 @@ export default{
             password:''
         };
         const errorMessage = ref('');
+        const apiUrl = import.meta.env.VITE_API_URL;
         //methods
         const loginUser = async()=>{
             errorMessage.value = '';
@@ -24,17 +25,16 @@ export default{
             }
             else{
                 try{
-                    const response = await axios.post('http://127.0.0.1:8000/api/login/', user);
-                    // const csrfToken = Cookies.get('csrftoken');
-                    // axios.defaults.headers.common['X-CSRFToken'] = csrfToken;
+                    const response = await axios.post(`${apiUrl}/api/login/`, user);
+                    // Check server response
                 if (response.data.token) {
                     console.log('Token:', response.data.token); 
                     Cookies.set('token', response.data.token, { expires: 7 }); // Токен будет храниться 7 дней
                     console.log('Success!');
-                    window.location.reload();
+                    window.location.reload()
                 } else {
                     errorMessage.value = response.data.message || 'Login failed. Please try again.';
-                    console.log(response.data)
+                    console.log(response.data);
                 }
                 }
                 catch(error){

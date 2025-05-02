@@ -22,9 +22,10 @@ export default{
 
 <template>
   <div class="nav">
-    <a href="/">Dishes</a> 
-    <a href="/add_dish">New dish</a>
-    <a href="/profile">Profile</a>
+    <router-link to="/">Dishes</router-link> 
+    <router-link to="/add_dish">New dish</router-link>
+    <router-link to="/profile">Profile</router-link>
+    <router-link to="/chat">Chat</router-link>
   </div>
 </template>
 

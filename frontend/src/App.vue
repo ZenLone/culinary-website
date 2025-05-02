@@ -15,13 +15,15 @@ export default {
     //data
     const showWelcome = ref(true);
     const token = Cookies.get('token');
+    const isShowWelcome = sessionStorage.getItem("showWelcome");
     //methods
-    if (token) {
+    if (token || isShowWelcome) {
       showWelcome.value = false; // Если пользователь авторизован, сразу показываем основное приложение
     }
     // Метод для закрытия Welcome
     const closeWelcome = () => {
       showWelcome.value = false;
+      sessionStorage.setItem('showWelcome', 'false');
     };
     return {
       showWelcome,

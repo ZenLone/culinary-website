@@ -15,6 +15,7 @@ export default{
         const token = Cookies.get('token'); // Получаем токен из cookie
         const isAuthenticated = ref(!!token); // Проверяем наличие токена
         const userData = ref({}); // Данные пользователя
+        const apiUrl = import.meta.env.VITE_API_URL;
         //methods
         const validateToken = async () => {
         try {
@@ -22,13 +23,17 @@ export default{
                 console.log('Login or register!!!');
             }
             else{
-        const response = await axios.post('http://127.0.0.1:8000/api/validate-token/',{token});
+        const response = await axios.post(`${apiUrl}/api/validate-token/`,{token});
         isAuthenticated.value = response.data.valid;
-        if(isAuthenticated){
-            const userResponse = await axios.get('http://127.0.0.1:8000/api/user-data/',{
+        if(isAuthenticated.value){
+            const userResponse = await axios.get(`${apiUrl}/api/user-data/`,{
                         headers: { Authorization: `Bearer ${token}` }
                     });
             userData.value = userResponse.data;
+        }
+        else{
+            Cookies.remove('token');
+            isAuthenticated.value = false;
         }
         }
          } catch (error) {

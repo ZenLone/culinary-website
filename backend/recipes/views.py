@@ -2,69 +2,137 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from db_config import recipes
+from db_config import recipes, fs
+from backend import settings
 import json
 from bson import ObjectId
 import logging
+import jwt
 
 logger = logging.getLogger(__name__)
 
-@csrf_exempt
-@require_http_methods(["GET", "POST", "DELETE"])
-def recipes_api(request):
-    if recipes is None:
-        logger.error("Ошибка подключение к Бд")
-        return JsonResponse({"error": "Database service unavailable"}, status=503, ensure_ascii=False)
-    if request.method == 'GET':
-        return _handle_get_recipes(request)
-    elif request.method == 'POST':
-        return _handle_post_recipe(request)
-    elif request.method == "DELETE":
-        return _handle_delete_recipe(request)
-
-
 class CustomJsonResponse(JsonResponse):
     def __init__(self, data, ensure_ascii=False, **kwargs):
-        # Сериализация данных с ensure_ascii
         super().__init__(data, **kwargs)
         self.content = json.dumps(data, ensure_ascii=ensure_ascii).encode('utf-8')
 
-def _handle_get_recipes(request):
+def _decode_jwt(token):
     try:
-        recipes_cursor = recipes.find({})
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        return payload
+    except jwt.ExpiredSignatureError: # Токен истек
+        return None
+    except jwt.InvalidTokenError: # Неверный токен
+        return None
+
+def _get_user_id_from_token(request):
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        return None
+
+    parts = auth_header.split(' ')
+    if len(parts) != 2:
+        return None
+
+    token = parts[1]
+    if not token:
+        return None
+    payload = _decode_jwt(token)
+    if payload:
+        return payload.get('user_id')
+    return None
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def recipes_api(request):
+    if recipes is None:
+        logger.error("Ошибка подключение к Бд")
+        return CustomJsonResponse({"message": "Ошбика подключения к БД"}, status=503)
+    
+    user_id = _get_user_id_from_token(request)
+    if not user_id:
+        return CustomJsonResponse({"message": "Ошибка авторизации"}, status=401)
+
+    if request.method == 'GET':
+        return _handle_get_recipes(request, user_id)
+    elif request.method == 'POST':
+        return _handle_post_recipe(request, user_id)
+
+@csrf_exempt
+@require_http_methods(["GET", "DELETE"])
+def recipe_id(request, id):
+    if recipes is None:
+        logger.error("Ошибка подключение к Бд")
+        return CustomJsonResponse({"message": "Ошбика подключения к БД"}, status=503)
+    
+    user_id = _get_user_id_from_token(request)
+    if not user_id:
+        return CustomJsonResponse({"message": "Ошибка авторизации"}, status=401)
+
+    if request.method == 'GET':
+        return _handle_get_recipe_detail(request, id, user_id)
+    elif request.method == 'DELETE':
+        return _handle_delete_recipe(request, id, user_id)
+
+def _handle_get_recipes(request, user_id):
+    try:
+        recipes_cursor = recipes.find({"user_id": user_id})
         recipes_list = []
         for recipe in recipes_cursor:
             if '_id' in recipe:
-                recipe['_id'] = str(recipe['_id']) 
+                recipe['_id'] = str(recipe['_id'])
             recipes_list.append(recipe)
-        # Используем CustomJsonResponse
-        return CustomJsonResponse(recipes_list, ensure_ascii=False, safe=False, status=200)
-    
+        return CustomJsonResponse(recipes_list, safe=False, status=200)
     except Exception as e:
-        logger.error(f"Error fetching recipes from MongoDB: {e}", exc_info=True)
-        return CustomJsonResponse({"error": "Failed to fetch recipes"}, ensure_ascii=False, status=500)
+        logger.error(f"Неизвестная ошибка: {e}", exc_info=True)
+        return CustomJsonResponse({"message": "Неизвестная ошибка"}, status=500)
 
-def _handle_post_recipe(request):
-    data = json.loads(request.body)
-        # Insert into MongoDB
-    insert_result = recipes.insert_one(data)
-    inserted_id = str(insert_result.inserted_id)
-    logger.info(f"Successfully added new recipe with ID: {inserted_id}")
-
-        # Return success response
-    return JsonResponse({
+def _handle_post_recipe(request, user_id):
+    try:
+        data = json.loads(request.body)
+        data['user_id'] = user_id   # Добавляем user_id к данным рецепта
+        insert_result = recipes.insert_one(data)
+        inserted_id = str(insert_result.inserted_id)
+        logger.info(f"Рецепт успешно добавлен по id: {inserted_id}")
+        return CustomJsonResponse({
             "message": "Recipe added successfully",
-            "inserted_id": inserted_id
+            "id": inserted_id
         }, status=201)
+    except json.JSONDecodeError:
+        logger.error("неверный json формат")
+        return CustomJsonResponse({"message": "неверный json формат"}, status=400)
+    except Exception as e:
+        logger.error(f"Ошибка добавления: {e}", exc_info=True)
+        return CustomJsonResponse({"message": "Ошибка добавления"}, status=500)
 
-def _handle_delete_recipe(request):
-    data = json.loads(request.body)
-    recipes_id = data.get("id")
-    Object_Id = ObjectId(recipes_id)
-    delete_recipes = recipes.delete_one({"id": Object_Id})
-    if delete_recipes.deleted_count == 1:
-        logger.info(recipes_id, " Id успешно удалено")
-        return JsonResponse({"message": "Recipe deleted successfully"}, status=200, ensure_ascii=False)
-    else:
-        logger.warning( recipes_id, "Это id не удалось удалить")
-        return JsonResponse({"error": "Recipe not found"}, status=404, ensure_ascii=False)
+def _handle_get_recipe_detail(request, id, user_id):
+    try:
+        recipe = recipes.find_one({"_id": ObjectId(id), "user_id": user_id})
+        if recipe:
+            recipe['_id'] = str(recipe['_id'])
+            return CustomJsonResponse(recipe, safe=False, status=200)
+        else:
+            return CustomJsonResponse({"message": "Рецепт не найден"}, status=404)
+    except Exception as e:
+        logger.error(f"Неизвестная ошибка: {e}", exc_info=True)
+        return CustomJsonResponse({"message": "Неизвестная ошибка"}, status=500)
+
+def _handle_delete_recipe(request, id, user_id):
+    try:
+        # Проверяем, является ли id допустимым ObjectId
+        if not ObjectId.is_valid(id):
+            return CustomJsonResponse({"message": "Недопустимый ID рецепта"}, status=400)
+
+        recipe = recipes.find_one({"_id": ObjectId(id), "user_id": user_id})
+        if not recipe:
+            return CustomJsonResponse({"message": "рецепт не найден"}, status=404)
+
+        delete_result = recipes.delete_one({"_id": ObjectId(id), "user_id": user_id})
+        if delete_result.deleted_count == 1:
+            logger.info(f"рецепт успешно удален по id: {id}")
+            return CustomJsonResponse({"message": "рецепт успешно удален"}, status=200)
+        else:
+            return CustomJsonResponse({"message": "ошибка при удалении рецепта"}, status=500)
+    except Exception as e:
+        logger.error("ошибка удаления рецепта", exc_info=True)
+        return CustomJsonResponse({"message": "ошибка удаления рецепта"}, status=500)

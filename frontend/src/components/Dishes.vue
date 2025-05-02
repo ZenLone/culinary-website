@@ -44,6 +44,7 @@ export default{
         }
         catch(error){
             console.log('Ошибка при удалении блюда');
+            console.error(error.message);
         }
         
         

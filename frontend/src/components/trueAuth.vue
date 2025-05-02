@@ -71,8 +71,15 @@ export default{
                 return avatarPath.value;
             }
             else{
+<<<<<<< HEAD
             const imagePath = response.data.imagePath;
-            const fullImagePath = `${apiUrl}/${imagePath}`;
+            const fullImagePath = `${apiUrl}/${imagePath}/`;
+=======
+            console.log(response)
+            const imagePath = response.data.imageurl;
+            console.log(imagePath)
+            const fullImagePath = `${apiUrl}/api/user-image/${userId}/s`;
+>>>>>>> 71b0d09bbd0cf4f8d664c2b0226a19f5166ea1a4
             console.log('Путь к изображению:', fullImagePath);
             avatarPath.value = fullImagePath;
         }

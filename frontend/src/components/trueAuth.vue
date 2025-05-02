@@ -72,7 +72,7 @@ export default{
             }
             else{
             const imagePath = response.data.imagePath;
-            const fullImagePath = `${apiUrl}/${imagePath}/`;
+            const fullImagePath = `${apiUrl}/api/user-image/${imagePath}/`;
             console.log('Путь к изображению:', fullImagePath);
             avatarPath.value = fullImagePath;
         }
